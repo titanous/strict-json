@@ -113,6 +113,16 @@ type InvalidUnmarshalError struct {
 	Type reflect.Type
 }
 
+// An UnmarshalKeyError describes a JSON key that did not have a corresponding
+// destination struct field.
+type UnmarshalKeyError struct {
+	Key string
+}
+
+func (e *UnmarshalKeyError) Error() string {
+	return "json: unexpected key " + strconv.Quote(e.Key)
+}
+
 func (e *InvalidUnmarshalError) Error() string {
 	if e.Type == nil {
 		return "json: Unmarshal(nil)"
@@ -531,6 +541,8 @@ func (d *decodeState) object(v reflect.Value) {
 					}
 					subv = subv.Field(i)
 				}
+			} else {
+				d.error(&UnmarshalKeyError{key})
 			}
 		}
 
