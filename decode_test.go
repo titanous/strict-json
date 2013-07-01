@@ -30,7 +30,7 @@ type V struct {
 	F3 Number
 }
 
-// ifaceNumAsFloat64/ifaceNumAsNumber are used to test unmarshalling with and
+// ifaceNumAsFloat64/ifaceNumAsNumber are used to test unmarshaling with and
 // without UseNumber
 var ifaceNumAsFloat64 = map[string]interface{}{
 	"k1": float64(1),
@@ -1127,6 +1127,25 @@ func TestUnmarshalSyntax(t *testing.T) {
 		if _, ok := err.(*SyntaxError); !ok {
 			t.Errorf("expected syntax error for Unmarshal(%q): got %T", src, err)
 		}
+	}
+}
+
+// Test handling of unexported fields that should be ignored.
+// Issue 4660
+type unexportedFields struct {
+	Name string
+	m    map[string]interface{} `json:"-"`
+	m2   map[string]interface{} `json:"abcd"`
+}
+
+func TestUnmarshalUnexported(t *testing.T) {
+	input := `{"Name": "Bob", "m": {"x": 123}, "m2": {"y": 456}, "abcd": {"z": 789}}`
+	want := &UnmarshalKeyError{"m"}
+
+	out := &unexportedFields{}
+	err := Unmarshal([]byte(input), out)
+	if !reflect.DeepEqual(err, want) {
+		t.Errorf("got %q, want %q", err, want)
 	}
 }
 
